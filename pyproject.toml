@@ -26,6 +26,7 @@ dependencies = [
   "python-frontmatter",
   "sqlalchemy",
   "fastapi",
+  "python-multipart",
   "click",
   "requests"
 ]

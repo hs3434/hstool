@@ -15,6 +15,22 @@ def cli():
     """
     pass 
 
+
+@cli.command()
+@click.option("--host", "-h", default="127.0.0.1")
+@click.option("--port", "-p", default=8000)
+@click.option("--reload", is_flag=True)
+def api(host, port, reload):
+    """启动api服务"""
+    import uvicorn
+    uvicorn.run(
+        app='hstool.api.main:app',
+        host=host ,
+        port=port,
+        reload=reload
+    )
+    
+    
 @cli.command()
 def init_sql():
     """初始化数据库"""

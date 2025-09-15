@@ -18,11 +18,6 @@ router = APIRouter(
 )
 
 
-# 配置文件存储目录（确保目录存在）
-FILE_STORAGE_DIR = Path("uploaded_files")
-FILE_STORAGE_DIR.mkdir(exist_ok=True)  # 不存在则创建
-
-
 def get_file_info(file_path: Path) -> dict:
     """获取文件的详细信息"""
     file_path = Path(file_path)
@@ -44,13 +39,13 @@ def validate_file_path(filename: str, work_dir: Path):
         raise HTTPException(status_code=403, detail="非法文件路径")
     return file_path
 
-@router.post("/files/upload", summary="上传文件")
+@router.post("/upload", summary="上传文件")
 async def upload_file(
     file: UploadFile = File(..., description="要上传的本地文件"),
     overwrite: bool = Query(False, description="是否覆盖已存在的文件")
 ):
     """上传本地文件到服务器"""
-    work_dir = config.WORK_DIR
+    work_dir = config.UPLOAD
     file_path = validate_file_path(file.filename, work_dir)
     
     # 检查文件是否已存在
@@ -70,14 +65,14 @@ async def upload_file(
     }
 
 
-@router.get("/files", summary="获取文件列表")
+@router.get("/", summary="获取文件列表")
 def get_file_list(
     suffix: Optional[str] = Query(None, description="按文件后缀过滤，如 'txt'、'pdf'"),
     sort_by: str = Query("created_at", description="排序字段：created_at / modified_at / size")
 ) -> List[dict]:
     """获取服务器上的所有文件列表（支持过滤和排序）"""
     # 获取所有文件
-    work_dir = config.WORK_DIR
+    work_dir = config.UPLOAD
     files = [f for f in work_dir.iterdir() if f.is_file()]
     
     # 按后缀过滤
@@ -98,10 +93,10 @@ def get_file_list(
     return [get_file_info(f) for f in files]
 
 
-@router.get("/files/{filename}", summary="下载文件")
+@router.get("/{filename}", summary="下载文件")
 def download_file(filename: str):
     """下载指定文件"""
-    work_dir = config.WORK_DIR
+    work_dir = config.UPLOAD
     file_path = validate_file_path(filename, work_dir)
     
     if not file_path.exists() or not file_path.is_file():
@@ -115,10 +110,10 @@ def download_file(filename: str):
     )
 
 
-@router.delete("/files/{filename}", summary="删除文件")
+@router.delete("/{filename}", summary="删除文件")
 def delete_file(filename: str):
     """删除服务器上的指定文件"""
-    work_dir = config.WORK_DIR
+    work_dir = config.UPLOAD
     file_path = validate_file_path(filename, work_dir)
     
     if not file_path.exists() or not file_path.is_file():
