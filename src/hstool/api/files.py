@@ -1,15 +1,14 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import UploadFile, File, HTTPException, Query
 from fastapi.responses import FileResponse
 import os
 import shutil
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 # api/files.py
 from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import FileResponse
-import os
-from hstool.config import config
+from ..config import config
 
 # 创建该功能组的路由实例
 router = APIRouter(
@@ -18,7 +17,7 @@ router = APIRouter(
 )
 
 
-def get_file_info(file_path: Path) -> dict:
+def get_file_info(file_path: Path) -> Dict[str, Any]:
     """获取文件的详细信息"""
     file_path = Path(file_path)
     stat = file_path.stat()
@@ -30,12 +29,14 @@ def get_file_info(file_path: Path) -> dict:
         "path": str(file_path)
     }
 
-def validate_file_path(filename: str, work_dir: Path):
+def validate_file_path(filename: str | None, work_dir: Path):
     """验证文件路径，防止路径遍历攻击"""
+    if filename is None:
+        raise ValueError("filename 不能为空")
     # 拼接用户目录和文件名（强制在用户目录内）
     file_path = work_dir / filename
     # 检查文件是否在用户目录内（防止 ../ 等路径遍历）
-    if not file_path.resolve().startswith(work_dir.resolve()):
+    if not str(file_path.resolve()).startswith(str(work_dir.resolve())):
         raise HTTPException(status_code=403, detail="非法文件路径")
     return file_path
 
@@ -43,7 +44,7 @@ def validate_file_path(filename: str, work_dir: Path):
 async def upload_file(
     file: UploadFile = File(..., description="要上传的本地文件"),
     overwrite: bool = Query(False, description="是否覆盖已存在的文件")
-):
+) -> Dict[str, Any]:
     """上传本地文件到服务器"""
     work_dir = config.UPLOAD
     file_path = validate_file_path(file.filename, work_dir)
@@ -69,7 +70,7 @@ async def upload_file(
 def get_file_list(
     suffix: Optional[str] = Query(None, description="按文件后缀过滤，如 'txt'、'pdf'"),
     sort_by: str = Query("created_at", description="排序字段：created_at / modified_at / size")
-) -> List[dict]:
+) -> List[Dict[str, Any]]:
     """获取服务器上的所有文件列表（支持过滤和排序）"""
     # 获取所有文件
     work_dir = config.UPLOAD

@@ -1,9 +1,10 @@
 from __future__ import annotations
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table, Connection
 from sqlalchemy.orm import relationship
 from sqlalchemy.event import listens_for
 from datetime import datetime
-from hstool.sql.db import Base
+from typing import Dict, Any
+from .db import Base
     
 class Tag(Base):
     __tablename__ = 'tag'
@@ -23,7 +24,12 @@ class Category(Base):
 
 # 监听 Category 表的创建事件，自动插入默认分类
 @listens_for(Category.__table__, 'after_create')
-def insert_default_category(target, connection, **kwargs):
+def insert_default_category(
+    target: Table, 
+    connection: Connection, 
+    **kwargs: Dict[str, Any]
+) -> None:
+    """监听Category表的创建事件，自动插入默认分类"""
     connection.execute(target.insert().values(id=1, name="Unclassified"))
 
 class Blog(Base):

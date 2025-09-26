@@ -2,8 +2,8 @@ import subprocess
 import click 
 from datetime import datetime, date, time
 from zoneinfo import ZoneInfo
-from typing import Union, Optional
-from hstool.config import config
+from typing import Union, Optional, Callable, Any, Dict
+from ..config import config
 
 
 def is_vscode_installed() -> bool:
@@ -21,7 +21,7 @@ def is_vscode_installed() -> bool:
         # 命令不存在或执行失败，说明未安装或未添加到PATH
         return False
     
-def command(cmd, start_new_session=True) -> subprocess.CompletedProcess:
+def command(cmd: str | list[str], start_new_session: bool=True) -> subprocess.CompletedProcess[str]:
     """命令子进程"""
     # 尝试运行 'code --version' 命令，成功则说明已安装
     return subprocess.run(
@@ -34,9 +34,9 @@ def command(cmd, start_new_session=True) -> subprocess.CompletedProcess:
         start_new_session=start_new_session
     )
 
-def add_options_from_dict(params_dict):
+def add_options_from_dict(params_dict: Dict[str, Any]):
     """根据字典动态生成Click选项装饰器"""
-    def decorator(func):
+    def decorator(func: Callable[..., None]):
         # 遍历字典的key，为每个key创建一个--key选项
         for key in params_dict.keys():
             # 选项名格式：--key，帮助信息使用字典中的默认值
@@ -75,28 +75,27 @@ def parse_date(date_input: Union[str, datetime, date, time]) -> Optional[datetim
         return None
     
     # 4. 处理字符串类型（自动尝试多种格式）
-    if isinstance(date_input, str):
-        # 常见日期格式列表（可根据需求扩展）
-        date_formats = [
-            # 日期+时间格式
-            "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
-            "%d-%m-%Y %H:%M:%S", "%d-%m-%Y %H:%M",
-            "%m-%d-%Y %H:%M:%S", "%m-%d-%Y %H:%M",
-            "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M",
-            "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M",
-            # 仅日期格式
-            "%Y-%m-%d", "%d-%m-%Y", "%m-%d-%Y",
-            "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y",
-            # 带文字的格式
-            "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y"
-        ]
-        
-        # 尝试每种格式解析
-        for fmt in date_formats:
-            try:
-                return datetime.strptime(date_input, fmt).replace(tzinfo=ZoneInfo(config.ZONE))
-            except ValueError:
-                continue
+    # 常见日期格式列表（可根据需求扩展）
+    date_formats = [
+        # 日期+时间格式
+        "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
+        "%d-%m-%Y %H:%M:%S", "%d-%m-%Y %H:%M",
+        "%m-%d-%Y %H:%M:%S", "%m-%d-%Y %H:%M",
+        "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M",
+        "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M",
+        # 仅日期格式
+        "%Y-%m-%d", "%d-%m-%Y", "%m-%d-%Y",
+        "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y",
+        # 带文字的格式
+        "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y"
+    ]
+    
+    # 尝试每种格式解析
+    for fmt in date_formats:
+        try:
+            return datetime.strptime(date_input, fmt).replace(tzinfo=ZoneInfo(config.ZONE))
+        except ValueError:
+            continue
     
     # 所有情况都不匹配
     return None

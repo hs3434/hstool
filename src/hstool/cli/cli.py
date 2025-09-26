@@ -3,8 +3,7 @@ from pathlib import Path
 import os
 import click
 import importlib
-from hstool.config import config
-from hstool.tool.common import command
+from ..tool.common import command
 
 @click.group()
 def cli():
@@ -20,7 +19,7 @@ def cli():
 @click.option("--host", "-h", default="127.0.0.1")
 @click.option("--port", "-p", default=8000)
 @click.option("--reload", is_flag=True)
-def api(host, port, reload):
+def api(host: str, port: int, reload: bool):
     """启动api服务"""
     import uvicorn
     uvicorn.run(
@@ -34,7 +33,7 @@ def api(host, port, reload):
 @cli.command()
 def init_sql():
     """初始化数据库"""
-    from hstool.sql.db import engine, Base
+    from ..sql.db import engine, Base
     Base.metadata.create_all(engine)
 
 @cli.command()
@@ -43,11 +42,10 @@ def init_sql():
     type=click.Choice(["bash", "zsh", "fish"]),
     help="指定终端类型"
 )
-def init_completion(shell):
+def init_completion(shell: str):
     """配置自动补全"""
     if not shell:
         # 自动检测终端类型（简单实现）
-        import os
         shell = os.path.basename(os.environ.get("SHELL", ""))
         if shell not in ["bash", "zsh", "fish"]:
             click.echo("暂时只支持 bash, zsh, fish")

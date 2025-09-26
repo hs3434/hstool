@@ -5,8 +5,9 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from hstool.tool.common import is_vscode_installed, command
-from hstool.config import config
+from typing import Dict
+from ..tool.common import is_vscode_installed, command
+from ..config import config
 
 
 @click.group()
@@ -17,7 +18,7 @@ def blog():
 @blog.command()
 @click.argument("slug")
 @click.argument("title", required=False, default=None)
-def new(slug, title):
+def new(slug: str, title: str):
     """Generate a blog post with slug and title."""
     slugs = os.listdir(config.BLOGPATH)
     if slug in slugs:
@@ -25,7 +26,7 @@ def new(slug, title):
     if not title:
         title = slug
     path = Path(config.BLOGPATH, slug, slug+".md").resolve()
-    metadata={
+    metadata: Dict[str, object]={
         "title": title,
         "author": config.AUTHOR,
         "tags": [],
@@ -33,28 +34,28 @@ def new(slug, title):
         "create": datetime.now(ZoneInfo(config.ZONE)).strftime("%d-%m-%Y %H:%M"),
         "update": datetime.now(ZoneInfo(config.ZONE)).strftime("%d-%m-%Y %H:%M")
     }
-    from hstool.tool.frontmatter import add_frontmatter
+    from ..tool.frontmatter import add_frontmatter
     add_frontmatter(path, metadata)
     if is_vscode_installed():
-        command(["code", path])
+        command(["code", str(path)])
 
 
 @blog.command()
 @click.argument("path", required=False, default=None)
-def init(path):
+def init(path: str):
     if not path:
-        path = Path(config.BLOGPATH)
-    from hstool.tool.blog import init_blog
+        path = config.BLOGPATH
+    from ..tool.blog import init_blog
     init_blog(path)
 
 @blog.command()
 @click.argument("path", required=False, default=None)
-def fun1(path):
+def fun1(path: str):
     if not path:
-        path = Path(config.BLOGPATH)
+        path2 = Path(config.BLOGPATH)
     else:
-        path = Path(path)
-    for file in path.glob("*.md"):
+        path2 = Path(path)
+    for file in path2.glob("*.md"):
         name = file.name[:-3]
         dir = Path(path, name)
         if dir.exists():
@@ -74,7 +75,7 @@ def front():
 @front.command()
 @click.argument("name")
 @click.argument("value")
-def rename(name, value):
-    from hstool.tool.frontmatter import rename_frontmatter
+def rename(name: str, value: str):
+    from ..tool.frontmatter import rename_frontmatter
     for file in Path(config.BLOGPATH).glob("*/*.md"):
         rename_frontmatter(file, **{name: value})

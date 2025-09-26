@@ -1,11 +1,11 @@
-import frontmatter
+import frontmatter  # type: ignore
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 
 def add_frontmatter(
-    file_path: str,
-    metadata: Dict[str, str],
+    file_path: str| Path,
+    metadata: Dict[str, object],
     overwrite: bool = False
 ) -> bool:
     """
@@ -31,12 +31,11 @@ def add_frontmatter(
         f.write(post.content)
     return True
 
-def get_frontmatter(md_file_path: str) -> Optional[Dict]:
+def get_frontmatter(md_file_path: str) -> Dict[str, object]:
     """解析 Markdown 文件的 Frontmatter 元数据"""
     file_path = Path(md_file_path)
     if not file_path.exists():
-        print(f"错误：文件 {md_file_path} 不存在")
-        return None
+        raise FileNotFoundError(f"错误：文件 {md_file_path} 不存在")
     
     with open(file_path, 'r', encoding='utf-8') as f:
         post = frontmatter.load(f)
@@ -44,16 +43,15 @@ def get_frontmatter(md_file_path: str) -> Optional[Dict]:
 
 def update_frontmatter(
     md_file_path: str,
-    new_metadata: Dict[str, str]
+    new_metadata: Dict[str, object]
 ) -> bool:
     """更新 Frontmatter 中的部分元数据（不覆盖现有其他字段）"""
     return add_frontmatter(md_file_path, new_metadata, overwrite=False)
 
-def rename_frontmatter(file_path, **kwargs):
+def rename_frontmatter(file_path: str| Path, **kwargs: object):
     """重命名 Frontmatter 中的字段"""
     if not Path(file_path).exists():
-        print(f"错误：文件 {file_path} 不存在")
-        return False
+        raise FileNotFoundError(f"错误：文件 {file_path} 不存在")
     
     with open(file_path, 'r', encoding='utf-8') as f:
         post = frontmatter.load(f)
@@ -68,4 +66,3 @@ def rename_frontmatter(file_path, **kwargs):
         post.metadata = new_metadata
         f.write(frontmatter.dumps(post))
         f.write(post.content)
-    return True

@@ -1,29 +1,38 @@
 from __future__ import annotations
 import os
-import re
-import frontmatter  # 解析Markdown元数据（需安装：pip install python-frontmatter）
-import requests
-from datetime import datetime, timezone
-from typing import Optional, List
-from hstool.config import config
-from hstool.sql.blog import Blog, Tag, Category
-from hstool.sql.db import Session
-from hstool.tool.common import parse_date
+import frontmatter  # type: ignore # 解析Markdown元数据（需安装：pip install python-frontmatter）
+from datetime import datetime
+from pathlib import Path
+from typing import Optional, List, Dict, Any, TypedDict, NotRequired, cast
+from sqlalchemy.orm.session import Session as SQLASession
+from ..sql.blog import Blog, Tag, Category
+from ..sql.db import Session
+from .common import parse_date
 
-def parse_markdown_file(file_path, slug=None):
+class PostFront(TypedDict):
+    title: str
+    slug: NotRequired[str]
+    create: NotRequired[str]
+    update: NotRequired[str]
+    tags: NotRequired[List[str]]
+    categories: NotRequired[List[str]]
+    
+
+def parse_markdown_file(file_path: str | Path, slug: str| None=None) -> Dict[str, Any]:
     """解析Markdown文件，提取元数据和内容"""
-    post = frontmatter.load(file_path)
+    post = frontmatter.load(str(file_path))
+    metadata = cast(PostFront, post.metadata)
     return {
-        "slug": slug or post.get("slug", None),
-        "title": post.get("title", "Untitled"),
-        "create": parse_date(post.get("create", datetime.now())),
-        "update": parse_date(post.get("update", datetime.now())),
-        "category": post.get("category", "Unclassified"),
-        "tags": post.get("tags", None),
+        "slug": slug or metadata.get("slug", None),
+        "title": metadata.get("title", "Untitled"),
+        "create": parse_date(metadata.get("create", datetime.now())),
+        "update": parse_date(metadata.get("update", datetime.now())),
+        "category": metadata.get("category", "Unclassified"),
+        "tags": metadata.get("tags", None),
         "content": post.content
     }
 
-def import_blog(path, slug=None):
+def import_blog(path: str | Path, slug: str | None=None):
     files = os.listdir(path)
     session = next(Session())
     for file in files:
@@ -50,19 +59,17 @@ def import_blog(path, slug=None):
             if category:
                 current_category = find_multilevel_category(session, category, create=True)
                 new_blog.category = current_category
-            else:
-                new_blog.category_id = 1
             session.commit()
             
 
             
-def init_blog(path):
+def init_blog(path: str| Path):
     blogs = os.listdir(path)
     for blog in blogs:
         import_blog(os.path.join(path, blog), slug=blog)
 
 def find_multilevel_category(
-    session: Session,
+    session: SQLASession,
     category_levels: List[str],
     create: bool = True
 ) -> Optional[Category]:
@@ -115,7 +122,7 @@ def find_multilevel_category(
 
     return current_category
 
-def merge_blog_by_slug(session: Session, blog_data: dict) -> Blog:
+def merge_blog_by_slug(session: SQLASession, blog_data: Dict[str, Any]) -> Blog:
     """
     根据slug合并更新博客：
     - 若slug已存在，更新博客内容

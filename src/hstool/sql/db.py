@@ -1,11 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from hstool.config import config
+from ..config import config
 
 Base = declarative_base()
 
-from hstool.sql import blog
+from .blog import *
 
 engine = create_engine(config.SQL, echo=True)
 
