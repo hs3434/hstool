@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from typing import Dict
+from inspect import cleandoc
 from ..tool.common import is_vscode_installed, command
 from ..config import config
 
@@ -43,6 +44,19 @@ def new(slug: str, title: str):
 @blog.command()
 @click.argument("path", required=False, default=None)
 def init(path: str):
+    """
+    导入本地目录的博客到数据库
+    
+    \b
+    目录结构如下所示:
+        posts/
+        ├── 240619
+        │   └── 240619.md
+        ├── 240620
+        │   └── 240620.md
+        ├── 2406202
+        │   └── 2406202.md
+    """
     if not path:
         path = config.BLOGPATH
     from ..tool.blog import init_blog
